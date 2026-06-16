@@ -1,6 +1,6 @@
 # IndexNow for openRin
 
-一个 Cloudflare Worker，用于自动将 openRin 博客的新文章和更新提交到 Bing IndexNow。
+一个 Cloudflare Worker，用于自动将 openRin 博客的新文章和更新提交到 Bing IndexNow.
 
 ## 功能特性
 
@@ -42,7 +42,23 @@ binding = "INDEXNOW_KV"
 id = "your-kv-id"
 ```
 
-### 4. 部署
+### 4. 配置 Cron 触发器
+
+在 Cloudflare Dashboard 中为 Worker 添加定时触发器：
+
+1. 进入 Cloudflare Dashboard → Workers & Pages → 你的 Worker
+2. 点击 **Settings** → **Triggers**
+3. 在 **Cron Triggers** 部分点击 **Add cron trigger**
+4. 输入 Cron 表达式：`0 16 * * *`（每天 UTC 16:00，即北京时间 0:00）
+5. 点击 **Save**
+
+或者使用 Wrangler CLI：
+
+```
+wrangler cron create --schedule="0 16 * * *"
+```
+
+### 5. 部署
 
 ```
 npm install
@@ -56,7 +72,7 @@ npm run deploy
 | INDEXNOW_API_KEY | ✅ | Bing IndexNow API 密钥 |
 | BLOG_URL | ✅ | 博客地址，如 https://my.blog |
 | WEBHOOK_URL | ❌ | Webhook 通知地址 |
-| WEBHOOK_BODY | ❌ | 自定义请求体模板 |
+| WEBHOOK_BODY | ❌ | 自定义请求体模板，包含{{message}} |
 
 ## 工作原理
 
@@ -67,7 +83,7 @@ npm run deploy
    - 新文章：从未提交过
    - 更新文章：更新时间晚于上次提交
    - 固定页面：每 7 天提交一次
-5. **提交 Bing IndexNow**：调用 `https://www.bing.com/indexnow`
+5. **提交 Bing IndexNow**：调用 `https://api.indexnow.org/IndexNow`
 6. **更新状态**：保存本次提交记录到 KV
 7. **记录日志**：保留 31 天
 8. **发送通知**：通过 Webhook 发送结果
