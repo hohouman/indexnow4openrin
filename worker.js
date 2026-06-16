@@ -173,7 +173,7 @@ async function executeIndexNowTask(env, ctx) {
         urlList: urlsToSubmit
       };
 
-      const response = await fetch("https://www.bing.com/indexnow", {
+      const response = await fetch("https://api.indexnow.org/IndexNow", {
         method: "POST",
         headers: {
           "Content-Type": "application/json; charset=utf-8"
