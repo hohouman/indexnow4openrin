@@ -3,7 +3,7 @@ export default {
     const url = new URL(request.url);
     
     // 前端管理页面
-    if (url.pathname === "/" || url.pathname === "/admin") {
+    if (url.pathname === "/") {
       return handleAdminPage(env, ctx);
     }
     
@@ -254,6 +254,7 @@ async function handleAdminPage(env, ctx) {
       border-radius: 12px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       margin-bottom: 20px;
+      text-align: center;
     }
     
     .header h1 {
@@ -457,6 +458,16 @@ async function handleAdminPage(env, ctx) {
         
         const statusHtml = \`
           <div class="status-item">
+            <span class="status-label">博客地址</span>
+            <span class="status-value">\${data.blogUrl || '未配置'}</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">Webhook 通知</span>
+            <span class="status-value \${data.webhookConfigured ? 'success' : 'error'}">
+              \${data.webhookConfigured ? '✓ 已配置' : '✗ 未配置'}
+            </span>
+          </div>
+          <div class="status-item">
             <span class="status-label">上次执行时间</span>
             <span class="status-value">\${data.lastExecutionTime || '尚未执行'}</span>
           </div>
@@ -470,8 +481,8 @@ async function handleAdminPage(env, ctx) {
           </div>
           <div class="status-item">
             <span class="status-label">最后执行状态</span>
-            <span class="status-value \${data.lastSuccess ? 'success' : 'error'}">
-              \${data.lastSuccess ? '✓ 成功' : '✗ 失败'}
+            <span class="status-value \${data.lastSuccess !== null ? (data.lastSuccess ? 'success' : 'error') : ''}">
+              \${data.lastSuccess === null ? '— 暂无数据' : (data.lastSuccess ? '✓ 成功' : '✗ 失败')}
             </span>
           </div>
           \${data.lastError ? \`
@@ -554,12 +565,6 @@ async function handleAdminPage(env, ctx) {
     // 页面加载时获取数据
     loadStatus();
     loadLogs();
-    
-    // 每 30 秒自动刷新
-    setInterval(() => {
-      loadStatus();
-      loadLogs();
-    }, 30000);
   </script>
 </body>
 </html>`;
@@ -576,13 +581,19 @@ async function handleGetStatus(env, ctx) {
     const lastExecutionKey = "indexnow_last_execution";
     const data = await env.INDEXNOW_KV.get(lastExecutionKey, "json");
     
+    // 获取配置信息
+    const blogUrl = env.BLOG_URL || '未配置';
+    const hasWebhook = !!env.WEBHOOK_URL;
+    
     if (!data) {
       return new Response(JSON.stringify({
         lastExecutionTime: null,
         trackedUrls: 0,
         nextFixedSubmit: null,
         lastSuccess: null,
-        lastError: null
+        lastError: null,
+        blogUrl: blogUrl,
+        webhookConfigured: hasWebhook
       }), {
         headers: { "Content-Type": "application/json" }
       });
@@ -609,7 +620,9 @@ async function handleGetStatus(env, ctx) {
       trackedUrls,
       nextFixedSubmit,
       lastSuccess: lastLog ? lastLog.success : null,
-      lastError: lastLog ? lastLog.error : null
+      lastError: lastLog ? lastLog.error : null,
+      blogUrl: blogUrl,
+      webhookConfigured: hasWebhook
     }), {
       headers: { "Content-Type": "application/json" }
     });
