@@ -1,6 +1,6 @@
 # IndexNow for openRin
 
-一个 Cloudflare Worker，用于自动将 openRin 博客的新文章和更新提交到 Bing IndexNow.
+一个 Cloudflare Worker，用于自动将 openRin 博客的新文章和更新提交到 Bing IndexNow。
 
 ## 功能特性
 
@@ -10,69 +10,100 @@
 - ✅ **Webhook 通知**：每次执行后发送通知
 - ✅ **前端管理界面**：浅色主题，显示执行状态和日志
 
-## 部署步骤
+## 部署步骤（Cloudflare Dashboard）
 
-### 1. 准备工作
+### 第 1 步：获取 IndexNow API Key
 
-- 在 [Bing Webmaster Tools](https://www.bing.com/webmasters) 获取 IndexNow API Key
-- 在博客根目录放置密钥验证文件（`{API_KEY}.txt`）
-- 创建 Cloudflare D1 数据库和 KV Namespace
+1. 访问 [Bing Webmaster Tools](https://www.bing.com/webmasters)
+2. 添加并验证你的网站
+3. 进入 **配置** → **IndexNow**
+4. 复制你的 API Key（例如：`abc123def456`）
+5. 在你的博客根目录创建文件 `{API_KEY}.txt`（例如：`abc123def456.txt`），内容为你的 API Key
 
-### 2. 配置环境变量
+### 第 2 步：创建 D1 数据库
+
+1. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com)
+2. 进入 **Workers & Pages** → **D1 SQL Database**
+3. 点击 **Create database**
+4. 输入数据库名称（例如：`openrin-db`）
+5. 点击 **Create**
+6. 记下 **Database ID**（后续需要用到）
+
+### 第 3 步：创建 KV Namespace
+
+1. 在 Cloudflare Dashboard 中，进入 **Workers & Pages** → **KV**
+2. 点击 **Create a namespace**
+3. 输入命名空间名称（例如：`INDEXNOW_KV`）
+4. 点击 **Add**
+5. 记下 **Namespace ID**（后续需要用到）
+
+### 第 4 步：创建 Worker
+
+1. 进入 **Workers & Pages** → **Overview**
+2. 点击 **Create application** → **Create Worker**
+3. 输入 Worker 名称（例如：`indexnow-for-openrin`）
+4. 点击 **Deploy**
+
+### 第 5 步：绑定 D1 和 KV
+
+1. 进入你的 Worker 页面
+2. 点击 **Settings** → **Variables**
+3. 向下滚动到 **Bindings** 部分
+4. 点击 **Add binding**
+
+**添加 D1 绑定：**
+- Type: `D1 Database`
+- Variable name: `DB`
+- D1 Database: 选择你创建的数据库
+- 点击 **Save**
+
+**添加 KV 绑定：**
+- Type: `KV Namespace`
+- Variable name: `INDEXNOW_KV`
+- KV Namespace: 选择你创建的命名空间
+- 点击 **Save**
+
+### 第 6 步：设置环境变量
+
+1. 在 **Settings** → **Variables** 页面
+2. 向下滚动到 **Environment Variables** 部分
+3. 点击 **Add variable**
+
+添加以下变量：
 
 ```
-wrangler secret put INDEXNOW_API_KEY
-wrangler secret put BLOG_URL
-wrangler secret put WEBHOOK_URL      # 可选
-wrangler secret put WEBHOOK_BODY     # 可选
+INDEXNOW_API_KEY = 你的 IndexNow API Key（必填）
+BLOG_URL = https://your.blog.com（必填）
+WEBHOOK_URL = 你的 Webhook 地址（可选）
+WEBHOOK_BODY = {"msg_type":"text","content":{"text":"{{message}}"}}（可选）
 ```
 
-### 3. 配置 wrangler.toml
+4. 点击 **Save and deploy**
 
-编辑 `wrangler.toml`，填入你的 D1 和 KV ID：
+### 第 7 步：上传 worker.js
 
-```
-[[d1_databases]]
-binding = "DB"
-database_name = "your-d1-name"
-database_id = "your-d1-id"
+1. 进入你的 Worker 页面
+2. 点击 **Quick edit**
+3. 删除默认代码，粘贴 [worker.js](file:///home/houman/workspace/indexnow4openrin/worker.js) 的全部内容
+4. 点击 **Save and deploy**
 
-[[kv_namespaces]]
-binding = "INDEXNOW_KV"
-id = "your-kv-id"
-```
+### 第 8 步：配置 Cron 触发器
 
-### 4. 配置 Cron 触发器
-
-在 Cloudflare Dashboard 中为 Worker 添加定时触发器：
-
-1. 进入 Cloudflare Dashboard → Workers & Pages → 你的 Worker
+1. 进入你的 Worker 页面
 2. 点击 **Settings** → **Triggers**
-3. 在 **Cron Triggers** 部分点击 **Add cron trigger**
-4. 输入 Cron 表达式：`0 16 * * *`（每天 UTC 16:00，即北京时间 0:00）
-5. 点击 **Save**
+3. 向下滚动到 **Cron Triggers** 部分
+4. 点击 **Add cron trigger**
+5. 输入 Cron 表达式：`0 16 * * *`
+   - 这表示每天 UTC 16:00 执行（即北京时间 0:00）
+6. 点击 **Save**
 
-或者使用 Wrangler CLI：
+### 第 9 步：测试运行
 
-```
-wrangler cron create --schedule="0 16 * * *"
-```
-
-### 5. 部署
-
-```
-npm install
-npm run deploy
-```
-
-## 环境变量说明
-
-| 变量 | 必填 | 说明 |
-|------|------|------|
-| INDEXNOW_API_KEY | ✅ | Bing IndexNow API 密钥 |
-| BLOG_URL | ✅ | 博客地址，如 https://my.blog |
-| WEBHOOK_URL | ❌ | Webhook 通知地址 |
-| WEBHOOK_BODY | ❌ | 自定义请求体模板，包含{{message}} |
+1. 访问你的 Worker URL（例如：`https://indexnow-for-openrin.your-subdomain.workers.dev`）
+2. 应该能看到前端管理界面
+3. 可以手动触发一次执行进行测试：
+   - 在浏览器控制台执行：`fetch('/?manual=true', {method: 'POST'})`
+   - 或者等待次日自动执行
 
 ## 工作原理
 
