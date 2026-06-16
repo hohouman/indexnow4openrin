@@ -20,16 +20,7 @@
 4. 复制你的 API Key（例如：`abc123def456`）
 5. 在你的博客根目录创建文件 `{API_KEY}.txt`（例如：`abc123def456.txt`），内容为你的 API Key
 
-### 第 2 步：创建 D1 数据库
-
-1. 登录 [Cloudflare Dashboard](https://dash.cloudflare.com)
-2. 进入 **Workers & Pages** → **D1 SQL Database**
-3. 点击 **Create database**
-4. 输入数据库名称（例如：`openrin-db`）
-5. 点击 **Create**
-6. 记下 **Database ID**（后续需要用到）
-
-### 第 3 步：创建 KV Namespace
+### 第 2 步：创建 KV Namespace
 
 1. 在 Cloudflare Dashboard 中，进入 **Workers & Pages** → **KV**
 2. 点击 **Create a namespace**
@@ -37,14 +28,14 @@
 4. 点击 **Add**
 5. 记下 **Namespace ID**（后续需要用到）
 
-### 第 4 步：创建 Worker
+### 第 3 步：创建 Worker
 
 1. 进入 **Workers & Pages** → **Overview**
 2. 点击 **Create application** → **Create Worker**
 3. 输入 Worker 名称（例如：`indexnow-for-openrin`）
 4. 点击 **Deploy**
 
-### 第 5 步：绑定 D1 和 KV
+### 第 4 步：绑定 D1 和 KV
 
 1. 进入你的 Worker 页面
 2. 点击 **Settings** → **Variables**
@@ -63,7 +54,7 @@
 - KV Namespace: 选择你创建的命名空间
 - 点击 **Save**
 
-### 第 6 步：设置环境变量
+### 第 5 步：设置环境变量
 
 1. 在 **Settings** → **Variables** 页面
 2. 向下滚动到 **Environment Variables** 部分
@@ -80,14 +71,14 @@ WEBHOOK_BODY = {"msg_type":"text","content":{"text":"{{message}}"}}（可选）
 
 4. 点击 **Save and deploy**
 
-### 第 7 步：上传 worker.js
+### 第 6 步：上传 worker.js
 
 1. 进入你的 Worker 页面
 2. 点击 **Quick edit**
 3. 删除默认代码，粘贴 [worker.js](file:///home/houman/workspace/indexnow4openrin/worker.js) 的全部内容
 4. 点击 **Save and deploy**
 
-### 第 8 步：配置 Cron 触发器
+### 第 7 步：配置 Cron 触发器
 
 1. 进入你的 Worker 页面
 2. 点击 **Settings** → **Triggers**
@@ -96,14 +87,6 @@ WEBHOOK_BODY = {"msg_type":"text","content":{"text":"{{message}}"}}（可选）
 5. 输入 Cron 表达式：`0 16 * * *`
    - 这表示每天 UTC 16:00 执行（即北京时间 0:00）
 6. 点击 **Save**
-
-### 第 9 步：测试运行
-
-1. 访问你的 Worker URL（例如：`https://indexnow-for-openrin.your-subdomain.workers.dev`）
-2. 应该能看到前端管理界面
-3. 可以手动触发一次执行进行测试：
-   - 在浏览器控制台执行：`fetch('/?manual=true', {method: 'POST'})`
-   - 或者等待次日自动执行
 
 ## 工作原理
 
